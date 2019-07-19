@@ -1,3 +1,8 @@
+// the mpd package is pulled from https://github.com/zencoder/go-dash
+// this package is used for unmarshall DASH MPD files
+// it can also be used to generate MPD files
+// We will modify this file to adapt this different DASH formats and therefore
+// we don't want to use zencoder/go-dash as an external dependency.
 package mpd
 
 import (
@@ -7,6 +12,7 @@ import (
 	"errors"
 	"strings"
 	"time"
+	"fmt"
 
 	. "github.com/zencoder/go-dash/helpers/ptrs"
 )
@@ -106,6 +112,7 @@ type CommonAttributesAndElements struct {
 	ScanType                  *string               `xml:"scanType,attr"`
 	FramePacking              *DescriptorType       `xml:"framePacking,attr"`
 	AudioChannelConfiguration *DescriptorType       `xml:"audioChannelConfiguration,attr"`
+	Accessibility             *DescriptorType       `xml:"accessibility,attr"`
 	ContentProtection         []ContentProtectioner `xml:"ContentProtection,omitempty"`
 	EssentialProperty         *DescriptorType       `xml:"essentialProperty,attr"`
 	SupplementalProperty      *DescriptorType       `xml:"supplmentalProperty,attr"`
@@ -130,6 +137,10 @@ type AdaptationSet struct {
 	SegmentList       *SegmentList          `xml:"SegmentList,omitempty"`
 	SegmentTemplate   *SegmentTemplate      `xml:"SegmentTemplate,omitempty"` // Live Profile Only
 	Representations   []*Representation     `xml:"Representation,omitempty"`
+}
+
+func (as *AdaptationSet) GetMimeType() string {
+    return *as.MimeType	
 }
 
 func (as *AdaptationSet) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
@@ -235,8 +246,13 @@ func (as *AdaptationSet) UnmarshalXML(d *xml.Decoder, start xml.StartElement) er
 					return err
 				}
 				representations = append(representations, rp)
+			case "AudioChannelConfiguration":
+
+			case "Accessibility":	
+				
 			default:
-				return errors.New("Unrecognized element in AdaptationSet")
+				//return errors.New("Unrecognized element in AdaptationSet")
+				return fmt.Errorf("Unrecognized element (%v )in AdaptationSet", tt.Name.Local)
 			}
 		case xml.EndElement:
 			if tt == start.End() {
